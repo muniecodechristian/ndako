@@ -139,4 +139,3 @@ function arrayLimit(val) {
 }
 
 module.exports = mongoose.model('annonce', PostSchema);
-
