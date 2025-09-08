@@ -25,5 +25,9 @@ router.post("/upload/", userController.uploadPicture);
 
 
 module.exports = router;
+router.post("/upload/", userController.uploadPicture);
+
+
+module.exports = router;
 
 module.exports = router;
