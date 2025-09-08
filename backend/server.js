@@ -21,7 +21,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // CORS configuration pour permettre l'envoi de cookies
 app.use(cors({
-   origin: 'http://localhost:5173', // Remplace avec ton frontend en prod
+   origin: true, // Remplace avec ton frontend en prod
   credentials: true
 }));
 app.use('/uploads', express.static('uploads'));
@@ -32,13 +32,14 @@ app.get('*', checkUser);
 
 // Route de vérification du token (pour React)
 app.get('/jwtid', requireAuth, (req, res) => {
-  res.status(200).send(res.locals.user._id);
+  res.status(200).send(res.locals.user?._id);
 });
 
 // Routes API
 app.use('/api/user', userRoutes);
 app.use('/api/post', postRoutes);
 app.use('/api/sendEmail',emailRoutes );
+//app.use('/api/favorites', require('./routes/favorite.route'));
 
 // Lancement du serveur
 app.listen(PORT, () => {

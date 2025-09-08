@@ -47,15 +47,16 @@ const userSchema = new mongoose.Schema(
    
     following: {
       type: [String]
-    },
-     favories: {
-      type: [String]
-    },
-    likes: {
-      type: [String]
     }, phone: {
       type: String
     },
+
+    
+   favorites: 
+    {
+      type: [String]
+    }
+  
   },
   {
     timestamps: true,
@@ -68,6 +69,7 @@ userSchema.pre("save", async function(next) {
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
+
 
 userSchema.statics.login = async function(email, password) {
   const user = await this.findOne({ email });

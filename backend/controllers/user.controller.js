@@ -1,6 +1,8 @@
 const { console } = require("inspector");
 const UserModel = require("../models/user.model");
+const postModel = require("../models/post.model");
 const ObjectID = require("mongoose").Types.ObjectId;
+
 
 const fs = require("fs");
 const { pipeline } = require("stream");
@@ -29,34 +31,47 @@ module.exports.userInfo = async (req, res) => {
 };
 
 module.exports.updateUser = async (req, res) => {
-  if (!ObjectID.isValid(req.params.id))
-    return res.status(400).send("ID unknown : " + req.params.id);
+
+     console.log(req.body);
+
+const  { userId, bioValue  }=req.body;
+  if (!ObjectID.isValid(userId))
+
+ 
+    return res.status(400).send("ID unknown : " + userId);
 
   try {
-    await UserModel.findOneAndUpdate(
-      { _id: req.params.id },
-      {
-        $set: {
-          bio: req.body.bio,
-        },
-      },
-      { new: true, upsert: true, setDefaultsOnInsert: true },
-      (err, docs) => {
-        if (!err) return res.send(docs);
-        if (err) return res.status(500).send({ message: err });
-      }
+     
+
+    const user = await UserModel.findByIdAndUpdate(
+ userId,
+      { bio: bioValue }, // on stocke directement l'URL envoyée
+      { new: true }
     );
-  } catch (err) {
-    return res.status(500).json({ message: err });
+
+    if (!user) {
+      return res.status(404).send({ message: "Utilisateur introuvable" });
+    }
+
+    res.status(200).send(user);
+  } catch (error) {
+    console.error("❌ Erreur uploadPicture:", error);
+    res.status(500).send({ message: "Erreur serveur interne" });
   }
 };
 
 module.exports.deleteUser = async (req, res) => {
+
+ 
+
   if (!ObjectID.isValid(req.params.id))
-    return res.status(400).send("ID unknown : " + req.params.id);
+    return res.status(400).send("ID unknown : " + userId);
 
   try {
-    await UserModel.remove({ _id: req.params.id }).exec();
+      await UserModel.findByIdAndDelete(req.params.id);
+
+    // 2. Supprimer toutes les publications de l'utilisateur
+    await postModel.deleteMany({  posterId:req.params.id });
     res.status(200).json({ message: "Successfully deleted. " });
   } catch (err) {
     return res.status(500).json({ message: err });
@@ -132,64 +147,88 @@ module.exports.unfollow = async (req, res) => {
 
 
 
-// Configuration de multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "./uploads/");
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, Date.now() + ext);
-  },
-});
 
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 Mo max
-}).single("file");
-
-// Contrôleur de l'upload
-// controllers/user.controller.js
 
 module.exports.uploadPicture = async (req, res) => {
+
+
+
+ 
+
   try {
-    // Vérification de l'existence du fichier
-    if (!req.file) {
-      return res.status(400).json({ message: "Aucun fichier envoyé." });
+
+    
+    const { userId, pictureUrl } = req.body; 
+ 
+    // URL déjà générée côté frontend
+
+    if (!pictureUrl) {
+      return res.status(400).send({ message: "Aucune URL fournie" });
+      
+
     }
 
-    // Vérification du type MIME
-    const mimeType = req.file.mimetype; // propriété correcte
-    if (
-      mimeType !== "image/jpg" &&
-      mimeType !== "image/jpeg" &&
-      mimeType !== "image/png"
-    ) {
-      throw new Error("Fichier invalide, seul JPG/JPEG/PNG autorisé");
-    }
-
-    // Vérification de la taille
-    if (req.file.size > 5 * 1024 * 1024) {
-      throw new Error("Fichier trop volumineux (max 5 Mo)");
-    }
-
-    // URL publique du fichier
-    const url = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
-
-    // Nom du fichier côté client
-    const filename = req.body.name || req.file.filename;
-
-    // Sauvegarde physique du fichier
-    await pipeline(
-      req.file.stream || fs.createReadStream(req.file.path), // fallback si stream non dispo
-      fs.createWriteStream(`${__dirname}/../client/public/uploads/profile/${filename}`)
+    const user = await UserModel.findByIdAndUpdate(
+ userId,
+      { picture: pictureUrl }, // on stocke directement l'URL envoyée
+      { new: true }
     );
 
-    // Retour OK
-    res.status(200).json({ message: "Upload réussi", url });
+    if (!user) {
+      return res.status(404).send({ message: "Utilisateur introuvable" });
+    }
 
+    res.status(200).send(user);
   } catch (error) {
-    console.error("Erreur upload :", error);
-    res.status(500).json({ error: error.message });
+    console.error("❌ Erreur uploadPicture:", error);
+    res.status(500).send({ message: "Erreur serveur interne" });
+  }
+};
+
+
+
+// ✅ Toggle Favori optimisé avec PATCH
+module.exports.toggleFavorite = async (req, res) => {
+  try {
+    const { userId, postId } = req.body;
+
+    if (!userId || !postId) {
+      return res.status(400).json({ message: "userId et postId requis" });
+    }
+
+    // Vérifier si le postId est déjà dans les favoris
+    const user = await UserModel.findOne({ _id: userId, favorites: postId });
+
+    let updateQuery;
+    let message;
+
+    if (user) {
+      // ✅ Déjà en favoris → retirer
+      updateQuery = { $pull: { favorites: postId } };
+      message = "Retiré des favoris";
+    } else {
+      // ✅ Pas encore en favoris → ajouter
+      updateQuery = { $addToSet: { favorites: postId } }; // addToSet évite les doublons
+      message = "Ajouté aux favoris";
+    }
+
+    // Mise à jour et retour du user avec les favoris actualisés
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      userId,
+      updateQuery,
+      { new: true } // retourne la version mise à jour
+    ).select("favorites");
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "Utilisateur introuvable" });
+    }
+
+    return res.status(200).json({
+      message,
+      favorites: updatedUser.favorites
+    });
+
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
   }
 };
