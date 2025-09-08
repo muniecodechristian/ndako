@@ -21,13 +21,25 @@ const PostSchema = new mongoose.Schema(
     },
     bienImmo: {
       type: String,
-      enum: ['maison', 'appartement', 'studio', 'bureau', 'maison de vente'],
+      enum: ['maison', 'appartement', 'studio', 'bureau','Villa', 'Ferme','maison de vente','Terrain','Entrepôt'],
       required: true,
     },
     annonce: {
       type: String,
       enum: ['vente', 'à louer'],
       required: true,
+    },
+    prixType: {
+      type: String,
+     
+    },
+   periode: {
+      type: String,
+     
+    },
+ idee: {
+      type: String,
+     
     },
     commune: {
       type: String,
@@ -110,6 +122,14 @@ const PostSchema = new mongoose.Schema(
       required: true,
       validate: [arrayLimit, '{PATH} doit contenir au moins une image'],
     },
+
+   likers: {
+      type: [String],
+    
+    },
+    likes: {
+      type: [String]
+    }
   },
   { timestamps: true }
 );
@@ -119,3 +139,4 @@ function arrayLimit(val) {
 }
 
 module.exports = mongoose.model('annonce', PostSchema);
+
