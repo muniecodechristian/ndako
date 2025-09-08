@@ -35,4 +35,3 @@ async function geocoding(address) {
 }
 
 module.exports = geocoding;
-
