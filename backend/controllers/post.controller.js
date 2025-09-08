@@ -43,7 +43,10 @@ module.exports.createPost = async (req, res) => {
       meuble,
       lit,
       surface,
-      reglement
+      reglement,
+        prixType,
+         periode,
+          idee
     } = req.body;
 
     // 📷 Gestion des photos
@@ -87,6 +90,9 @@ module.exports.createPost = async (req, res) => {
       lit: parseInt(lit, 10) || 0,
       surface: parseInt(surface, 10) || 0,
       reglement: reglement || '',
+      prixType:prixType,
+         periode:periode,
+          idee:idee,
       photos
     });
 
@@ -103,20 +109,21 @@ module.exports.createPost = async (req, res) => {
 };
 
 // 📌 Mise à jour d’un post
+
 module.exports.updatePost = async (req, res) => {
+  console.log("Message reçu :", req.body.message);
+  console.log("ID reçu :", req.params.id);
+
+  // ✅ Vérification de l'ID
   if (!ObjectId.isValid(req.params.id)) {
     return res.status(400).json({ message: "ID invalide : " + req.params.id });
   }
 
   try {
+    // ✅ Mise à jour du post
     const updated = await postModel.findByIdAndUpdate(
       req.params.id,
-      {
-        $set: {
-          title: req.body.title,
-          description: req.body.description,
-        },
-      },
+      {  description: req.body.message},
       { new: true, runValidators: true }
     );
 
@@ -126,9 +133,12 @@ module.exports.updatePost = async (req, res) => {
 
     res.status(200).json({
       message: "Post mis à jour avec succès",
-      post: updated
+      post: updated,
     });
+
+    console.log("✅ updatePost exécuté avec succès");
   } catch (err) {
+    console.error("❌ Erreur updatePost :", err);
     res.status(500).json({ message: "Erreur serveur", error: err.message });
   }
 };
@@ -158,6 +168,12 @@ module.exports.searchPosts = async (req, res) => {
     const posts = await postModel.find({
       $text: { $search: query },
     });
+    res.status(200).json(posts);
+  } catch (err) {
+    res.status(500).json({ message: "Erreur serveur", error: err.message });
+  }
+};
+
     res.status(200).json(posts);
   } catch (err) {
     res.status(500).json({ message: "Erreur serveur", error: err.message });
