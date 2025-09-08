@@ -4,6 +4,7 @@ const postModel = require('../models/post.model');
 const ObjectId = require("mongoose").Types.ObjectId;
 const getLocation = require('../middleware/Geocode');
 
+
 // 📌 Récupération des posts
 module.exports.getPosts = async (req, res) => {
   try {
