@@ -1,20 +1,21 @@
 // controllers/post.controller.js
+// controllers/post.controller.js
 
-const postModel = require('../models/post.model');
+const postModel = require("../models/post.model");
 const ObjectId = require("mongoose").Types.ObjectId;
-const getLocation = require('../middleware/Geocode');
-
+const getLocation = require("../middleware/Geocode");
 
 // 📌 Récupération des posts
 module.exports.getPosts = async (req, res) => {
   try {
-    const posts = await postModel.find()
-      .populate('posterId', '-password') // populate le User
-      .sort({ createdAt: -1 });         // optionnel : trier par date descendante
+    const posts = await postModel
+      .find()
+      .populate("posterId", "-password")
+      .sort({ createdAt: -1 });
 
     res.status(200).json(posts);
   } catch (err) {
-    console.error("Erreur lors de la récupération des posts :", err);
+    console.error("❌ Erreur getPosts :", err);
     res.status(500).json({ message: "Erreur serveur", error: err.message });
   }
 };
@@ -45,24 +46,28 @@ module.exports.createPost = async (req, res) => {
       lit,
       surface,
       reglement,
-        prixType,
-         periode,
-          idee
+      prixType,
+      periode,
+      idee,
     } = req.body;
 
     // 📷 Gestion des photos
     const photos = req.files?.map((file) => file.filename) || [];
     if (photos.length === 0) {
-      return res.status(400).json({ message: "Veuillez ajouter au moins une photo." });
+      return res
+        .status(400)
+        .json({ message: "Veuillez ajouter au moins une photo." });
     }
 
     // Conversion booléens
-    const isTrue = (v) => v === 'true' || v === true;
+    const isTrue = (v) => v === "true" || v === true;
 
     // 🗺 Géocodage de l'adresse
     const location = await getLocation(adresse);
     if (!location) {
-      return res.status(400).json({ message: "Adresse introuvable ou invalide" });
+      return res
+        .status(400)
+        .json({ message: "Adresse introuvable ou invalide" });
     }
     const { lat, lon } = location;
 
@@ -90,54 +95,45 @@ module.exports.createPost = async (req, res) => {
       meuble: isTrue(meuble),
       lit: parseInt(lit, 10) || 0,
       surface: parseInt(surface, 10) || 0,
-      reglement: reglement || '',
-      prixType:prixType,
-         periode:periode,
-          idee:idee,
-      photos
+      reglement: reglement || "",
+      prixType: prixType || "",
+      periode: periode || "",
+      idee: idee || "",
+      photos,
     });
 
     const savedPost = await newPost.save();
     res.status(201).json({
-      message: "Post créé avec succès",
-      post: savedPost
+      message: "✅ Post créé avec succès",
+      post: savedPost,
     });
-
   } catch (err) {
-    console.error("Erreur lors de l'enregistrement :", err);
+    console.error("❌ Erreur createPost :", err);
     res.status(500).json({ message: "Erreur serveur", error: err.message });
   }
 };
 
 // 📌 Mise à jour d’un post
-
 module.exports.updatePost = async (req, res) => {
-  console.log("Message reçu :", req.body.message);
-  console.log("ID reçu :", req.params.id);
-
-  // ✅ Vérification de l'ID
-  if (!ObjectId.isValid(req.params.id)) {
-    return res.status(400).json({ message: "ID invalide : " + req.params.id });
+  const { id } = req.params;
+  if (!ObjectId.isValid(id)) {
+    return res.status(400).json({ message: "ID invalide : " + id });
   }
 
   try {
-    // ✅ Mise à jour du post
-    const updated = await postModel.findByIdAndUpdate(
-      req.params.id,
-      {  description: req.body.message},
-      { new: true, runValidators: true }
-    );
+    const updated = await postModel.findByIdAndUpdate(id, req.body, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!updated) {
       return res.status(404).json({ message: "Post non trouvé" });
     }
 
     res.status(200).json({
-      message: "Post mis à jour avec succès",
+      message: "✅ Post mis à jour avec succès",
       post: updated,
     });
-
-    console.log("✅ updatePost exécuté avec succès");
   } catch (err) {
     console.error("❌ Erreur updatePost :", err);
     res.status(500).json({ message: "Erreur serveur", error: err.message });
@@ -146,18 +142,20 @@ module.exports.updatePost = async (req, res) => {
 
 // 📌 Suppression d’un post
 module.exports.deletePost = async (req, res) => {
-  if (!ObjectId.isValid(req.params.id)) {
-    return res.status(400).json({ message: "ID invalide : " + req.params.id });
+  const { id } = req.params;
+  if (!ObjectId.isValid(id)) {
+    return res.status(400).json({ message: "ID invalide : " + id });
   }
 
   try {
-    const deleted = await postModel.findByIdAndDelete(req.params.id);
+    const deleted = await postModel.findByIdAndDelete(id);
     if (!deleted) {
       return res.status(404).json({ message: "Post non trouvé" });
     }
 
-    res.status(200).json({ message: "Post supprimé avec succès" });
+    res.status(200).json({ message: "✅ Post supprimé avec succès" });
   } catch (err) {
+    console.error("❌ Erreur deletePost :", err);
     res.status(500).json({ message: "Erreur serveur", error: err.message });
   }
 };
@@ -165,18 +163,19 @@ module.exports.deletePost = async (req, res) => {
 // 📌 Recherche (full-text)
 module.exports.searchPosts = async (req, res) => {
   const { query } = req.query;
+
   try {
+    if (!query || query.trim() === "") {
+      return res.status(400).json({ message: "Veuillez fournir une requête" });
+    }
+
     const posts = await postModel.find({
       $text: { $search: query },
     });
-    res.status(200).json(posts);
-  } catch (err) {
-    res.status(500).json({ message: "Erreur serveur", error: err.message });
-  }
-
 
     res.status(200).json(posts);
   } catch (err) {
+    console.error("❌ Erreur searchPosts :", err);
     res.status(500).json({ message: "Erreur serveur", error: err.message });
   }
-
+};
