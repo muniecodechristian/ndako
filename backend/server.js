@@ -21,7 +21,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // CORS configuration pour permettre l'envoi de cookies
 app.use(cors({
-   origin: true, // Remplace avec ton frontend en prod
+   origin:' http://localhost:5173', // Remplace avec ton frontend en prod
   credentials: true
 }));
 app.use('/uploads', express.static('uploads'));
