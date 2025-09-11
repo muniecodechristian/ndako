@@ -74,7 +74,8 @@ module.exports.signIn = async (req, res) => {
       console.log('user intruvable')
     }
 
-    res.cookie("jwt", token, { httpOnly: true, maxAge });
+    res.cookie("jwt", token, { httpOnly: true, maxAge  ,   secure: true,   // ✅ obligatoire en prod HTTPS
+  sameSite: "none" });
     return res.status(200).json({ user: user._id });
 
   } catch (err) {
