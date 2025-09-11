@@ -88,8 +88,13 @@ module.exports.signIn = async (req, res) => {
 // ===== DÉCONNEXION =====
 module.exports.logout = (req, res) => {
   console.log("logout");
-  res.cookie("jwt", "", { maxAge: 1 });  // on supprime le cookie
+  res.clearCookie("jwt", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production", // HTTPS obligatoire seulement en prod
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  });
   return res.status(200).json({ message: "Déconnexion réussie" });
 };
+
 
 
