@@ -6,7 +6,7 @@ const UserModel = require("../models/user.model");
 module.exports.checkUser = (req, res, next) => {
   const token = req.cookies.jwt;
   if (token) {
-    jwt.verify(token, process.env.TOKEN_SECRET, async (err, decodedToken) => {
+    jwt.verify(token, 'secret', async (err, decodedToken) => {
       if (err) {
         res.locals.user = null;
        // res.cookie("jwt", "", { maxAge: 1 });
@@ -26,7 +26,7 @@ module.exports.checkUser = (req, res, next) => {
 module.exports.requireAuth = (req, res, next) => {
   const token = req.cookies.jwt;
   if (token) {
-    jwt.verify(token, process.env.TOKEN_SECRET, async (err, decodedToken) => {
+    jwt.verify(token,'secret', async (err, decodedToken) => {
       if (err) {
         console.log(err);
         res.send(200).json('no token')
