@@ -1,4 +1,4 @@
-// controllers/post.controller.js
+ // controllers/post.controller.js
 
 const postModel = require("../models/post.model");
 const ObjectId = require("mongoose").Types.ObjectId;
@@ -20,6 +20,7 @@ module.exports.getPosts = async (req, res) => {
 };
 
 // 📌 Création d'un post avec géocodage sécurisé
+// 📌 Création d'un post (adresse brute envoyée par le front)
 module.exports.createPost = async (req, res) => {
   try {
     const {
@@ -32,7 +33,7 @@ module.exports.createPost = async (req, res) => {
       commune,
       chambre,
       salleDeBain,
-      adresse,
+      adresse,   // <-- envoyé directement depuis le front
       salon,
       cuisine,
       salleManger,
@@ -48,6 +49,7 @@ module.exports.createPost = async (req, res) => {
       prixType,
       periode,
       idee,
+      location,   // ⚡ déjà calculé au front et envoyé (ex: { lat, lon })
     } = req.body;
 
     // 📷 Gestion des photos
@@ -58,18 +60,9 @@ module.exports.createPost = async (req, res) => {
         .json({ message: "Veuillez ajouter au moins une photo." });
     }
 
-    // Conversion booléens
     const isTrue = (v) => v === "true" || v === true;
 
-    // 🗺 Géocodage sécurisé
-    let location = await getLocation(adresse);
-    if (!location) {
-      console.warn("⚠️ Géocoding échoué, sauvegarde du post sans coordonnées");
-      location = { lat: 0, lon: 0 }; // coordonnées par défaut
-    }
-    const { lat, lon } = location;
-
-    // 📦 Création du post
+    // 📦 Création du post (sans appel geocode)
     const newPost = new postModel({
       posterId,
       title,
@@ -81,7 +74,7 @@ module.exports.createPost = async (req, res) => {
       chambre: parseInt(chambre, 10) || 0,
       salleDeBain: parseInt(salleDeBain, 10) || 0,
       adresse,
-      location: [lon, lat], // format GeoJSON [longitude, latitude]
+      location: location ? [location.lon, location.lat] : undefined, // stocke seulement si envoyé
       salon: isTrue(salon),
       cuisine: isTrue(cuisine),
       salleManger: isTrue(salleManger),
@@ -177,4 +170,5 @@ module.exports.searchPosts = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur", error: err.message });
   }
 };
+
 
