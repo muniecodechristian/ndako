@@ -1,5 +1,4 @@
 // controllers/post.controller.js
-// controllers/post.controller.js
 
 const postModel = require("../models/post.model");
 const ObjectId = require("mongoose").Types.ObjectId;
@@ -20,7 +19,7 @@ module.exports.getPosts = async (req, res) => {
   }
 };
 
-// 📌 Création d'un post avec géocodage
+// 📌 Création d'un post avec géocodage sécurisé
 module.exports.createPost = async (req, res) => {
   try {
     const {
@@ -62,12 +61,11 @@ module.exports.createPost = async (req, res) => {
     // Conversion booléens
     const isTrue = (v) => v === "true" || v === true;
 
-    // 🗺 Géocodage de l'adresse
-    const location = await getLocation(adresse);
+    // 🗺 Géocodage sécurisé
+    let location = await getLocation(adresse);
     if (!location) {
-      return res
-        .status(400)
-        .json({ message: "Adresse introuvable ou invalide" });
+      console.warn("⚠️ Géocoding échoué, sauvegarde du post sans coordonnées");
+      location = { lat: 0, lon: 0 }; // coordonnées par défaut
     }
     const { lat, lon } = location;
 
@@ -179,3 +177,4 @@ module.exports.searchPosts = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur", error: err.message });
   }
 };
+
