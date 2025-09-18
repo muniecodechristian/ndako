@@ -1,8 +1,5 @@
- // controllers/post.controller.js
-
 const postModel = require("../models/post.model");
 const ObjectId = require("mongoose").Types.ObjectId;
-const getLocation = require("../middleware/Geocode");
 
 // 📌 Récupération des posts
 module.exports.getPosts = async (req, res) => {
@@ -19,8 +16,7 @@ module.exports.getPosts = async (req, res) => {
   }
 };
 
-// 📌 Création d'un post avec géocodage sécurisé
-// 📌 Création d'un post (adresse brute envoyée par le front)
+// 📌 Création d’un post
 module.exports.createPost = async (req, res) => {
   try {
     const {
@@ -33,7 +29,7 @@ module.exports.createPost = async (req, res) => {
       commune,
       chambre,
       salleDeBain,
-      adresse,   // <-- envoyé directement depuis le front
+      adresse,
       salon,
       cuisine,
       salleManger,
@@ -49,20 +45,16 @@ module.exports.createPost = async (req, res) => {
       prixType,
       periode,
       idee,
-      location,   // ⚡ déjà calculé au front et envoyé (ex: { lat, lon })
+      location, // déjà fourni par le front
+      photos,   // déjà des URLs Cloudinary
     } = req.body;
 
-    // 📷 Gestion des photos
-    const photos = req.files?.map((file) => file.filename) || [];
-    if (photos.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Veuillez ajouter au moins une photo." });
+    if (!photos || photos.length === 0) {
+      return res.status(400).json({ message: "Veuillez ajouter au moins une photo." });
     }
 
     const isTrue = (v) => v === "true" || v === true;
 
-    // 📦 Création du post (sans appel geocode)
     const newPost = new postModel({
       posterId,
       title,
@@ -74,7 +66,7 @@ module.exports.createPost = async (req, res) => {
       chambre: parseInt(chambre, 10) || 0,
       salleDeBain: parseInt(salleDeBain, 10) || 0,
       adresse,
-      location: location ? [location.lon, location.lat] : undefined, // stocke seulement si envoyé
+      location: location ? [location.lon, location.lat] : undefined,
       salon: isTrue(salon),
       cuisine: isTrue(cuisine),
       salleManger: isTrue(salleManger),
@@ -86,18 +78,15 @@ module.exports.createPost = async (req, res) => {
       meuble: isTrue(meuble),
       lit: parseInt(lit, 10) || 0,
       surface: parseInt(surface, 10) || 0,
-      reglement: reglement || "",
-      prixType: prixType || "",
-      periode: periode || "",
-      idee: idee || "",
-      photos,
+      reglement,
+      prixType,
+      periode,
+      idee,
+      photos, // URLs Cloudinary
     });
 
     const savedPost = await newPost.save();
-    res.status(201).json({
-      message: "✅ Post créé avec succès",
-      post: savedPost,
-    });
+    res.status(201).json({ message: "✅ Post créé avec succès", post: savedPost });
   } catch (err) {
     console.error("❌ Erreur createPost :", err);
     res.status(500).json({ message: "Erreur serveur", error: err.message });
@@ -121,10 +110,7 @@ module.exports.updatePost = async (req, res) => {
       return res.status(404).json({ message: "Post non trouvé" });
     }
 
-    res.status(200).json({
-      message: "✅ Post mis à jour avec succès",
-      post: updated,
-    });
+    res.status(200).json({ message: "✅ Post mis à jour", post: updated });
   } catch (err) {
     console.error("❌ Erreur updatePost :", err);
     res.status(500).json({ message: "Erreur serveur", error: err.message });
@@ -144,29 +130,9 @@ module.exports.deletePost = async (req, res) => {
       return res.status(404).json({ message: "Post non trouvé" });
     }
 
-    res.status(200).json({ message: "✅ Post supprimé avec succès" });
+    res.status(200).json({ message: "✅ Post supprimé" });
   } catch (err) {
     console.error("❌ Erreur deletePost :", err);
-    res.status(500).json({ message: "Erreur serveur", error: err.message });
-  }
-};
-
-// 📌 Recherche (full-text)
-module.exports.searchPosts = async (req, res) => {
-  const { query } = req.query;
-
-  try {
-    if (!query || query.trim() === "") {
-      return res.status(400).json({ message: "Veuillez fournir une requête" });
-    }
-
-    const posts = await postModel.find({
-      $text: { $search: query },
-    });
-
-    res.status(200).json(posts);
-  } catch (err) {
-    console.error("❌ Erreur searchPosts :", err);
     res.status(500).json({ message: "Erreur serveur", error: err.message });
   }
 };
