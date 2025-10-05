@@ -1,5 +1,8 @@
 const postModel = require("../models/post.model");
+const  Video = require("../models/postvideo.model.js");
 const ObjectId = require("mongoose").Types.ObjectId;
+const geocoding=require('../middleware/Geocode');
+
 
 // 📌 Récupération des posts
 module.exports.getPosts = async (req, res) => {
@@ -54,6 +57,8 @@ module.exports.createPost = async (req, res) => {
     }
 
     const isTrue = (v) => v === "true" || v === true;
+    
+     const Location = await geocoding(adresse);
 
     const newPost = new postModel({
       posterId,
@@ -66,7 +71,7 @@ module.exports.createPost = async (req, res) => {
       chambre: parseInt(chambre, 10) || 0,
       salleDeBain: parseInt(salleDeBain, 10) || 0,
       adresse,
-      location: location ? [location.lon, location.lat] : undefined,
+      location: Location ? [Location.lon, Location.lat] : undefined,
       salon: isTrue(salon),
       cuisine: isTrue(cuisine),
       salleManger: isTrue(salleManger),
@@ -136,5 +141,49 @@ module.exports.deletePost = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur", error: err.message });
   }
 };
+module.exports.createPostVideo= async (req, res) => {
+
+ 
+
+  try {
+    const { videoUrl, description, posterId } = req.body;
+
+    if (!videoUrl || !posterId) {
+      return res.status(400).json({ message: "videoUrl et posterId sont requis" });
+    }
+
+    const video = await Video.create({
+      videoUrl,
+      description,
+      posterId
+    });
+
+    res.status(201).json(video);
+  } catch (err) {
+    console.error("Erreur création vidéo:", err);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+  
+ 
+
+};
+
+
+
+// 📌 Récupération des posts vidéo
+module.exports.getPostsVideo = async (req, res) => {
+  try {
+    const videos = await Video
+      .find()
+      .populate("posterId", "-password") // si tu veux inclure les infos du user
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(videos);
+  } catch (err) {
+    console.error("❌ Erreur getPostsVideo :", err);
+    res.status(500).json({ message: "Erreur serveur", error: err.message });
+  }
+};
+
 
 
