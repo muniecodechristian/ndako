@@ -6,7 +6,9 @@ const upload = require('../middleware/multerconfig');
 
 
 router.get('/', postController.getPosts);
+router.get('/getPostsVideo', postController.getPostsVideo);
 router.post('/', upload.array('photos', 20), postController.createPost);
+router.post('/video', postController.createPostVideo);
 router.put('/:id', postController.updatePost);
 
 
