@@ -117,6 +117,11 @@ const PostSchema = new mongoose.Schema(
   index: '2dsphere' // pour les requêtes géospatiales
 }
 ,
+  taken: {
+  type: Boolean, // true si la maison est prise
+  default: false
+}
+,
     photos: {
       type: [String],
       required: true,
