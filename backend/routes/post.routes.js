@@ -9,9 +9,15 @@ router.get('/', postController.getPosts);
 router.get('/getPostsVideo', postController.getPostsVideo);
 router.post('/', upload.array('photos', 20), postController.createPost);
 router.post('/video', postController.createPostVideo);
-router.put('/:id', postController.updatePost);
+router.post('/:id', postController.updatePost);
+
+
+
 
 
 router.delete('/:id', postController.deletePost);
+
+router.post("/toggle-taken/:id", postController.togglePostTaken);
+
 
 module.exports = router;
