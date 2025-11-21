@@ -187,3 +187,38 @@ module.exports.getPostsVideo = async (req, res) => {
 
 
 
+
+
+// 📌 Toggle taken (true/false)
+exports.togglePostTaken = async (req, res) => {
+  const { id } = req.params;
+
+  if (!ObjectId.isValid(id)) {
+    return res.status(400).json({ message: "ID invalide : " + id });
+  }
+
+  try {
+    const post = await postModel.findById(id);
+
+    if (!post) {
+      return res.status(404).json({ message: "Post non trouvé" });
+    }
+
+    // 🔁 Inverser la valeur actuelle
+    post.taken = !post.taken;
+
+    await post.save();
+
+    res.status(200).json({
+      message: "Statut 'taken' mis à jour",
+      taken: post.taken,
+    });
+
+  } catch (err) {
+    console.error("❌ Erreur togglePostTaken :", err);
+    res.status(500).json({ message: "Erreur serveur", error: err.message });
+  }
+};
+
+
+
