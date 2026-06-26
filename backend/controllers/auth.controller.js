@@ -23,13 +23,13 @@ module.exports.signUp = async (req, res) => {
   const { pseudo, email, password, phone } = req.body;
 
   try {
-    // ✅ Création de l’utilisateur
+    //  Création de l’utilisateur
     const user = await UserModel.create({ pseudo, email, password, phone });
 
-    // ✅ Génération du token
+    // Génération du token
     const token = createToken(user._id);
 
-    // ✅ Envoi de l’email de bienvenue
+    // Envoi de l’email de bienvenue
     await sendEmail(
       user.email,
       "Bienvenue sur NDAKO 🎉",
@@ -39,14 +39,14 @@ module.exports.signUp = async (req, res) => {
           <h2>Bienvenue ${user.pseudo} 👋</h2>
           <p>Merci de vous être inscrit sur <strong>NDAKO</strong>.</p>
           <p>Nous sommes ravis de vous compter parmi nous.</p>
-          <p>📞 Téléphone : ${user.phone}</p>
+          <p> Téléphone : ${user.phone}</p>
             <p>  veuillez Nous  écrire si c'est ne pas vous.</p>
           <p style="margin-top: 20px;">Cordialement,<br/>L'équipe NDAKO</p>
         </div>
       `
     );
 
-    // ✅ Réponse unique
+    // Réponse unique
     return res.status(201).json({
       user: {
         id: user._id,
@@ -57,7 +57,7 @@ module.exports.signUp = async (req, res) => {
       token,
     });
   } catch (err) {
-    // ✅ Gestion des erreurs
+    //  Gestion des erreurs
     const errors = signUpErrors(err);
     return res.status(400).json({ errors });
   }
